@@ -1,0 +1,574 @@
+{
+  "info": {
+    "name": "LISW2 - Parcial Práctico Corte 2 (Builder/State, REST+RabbitMQ, JPA)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "questionId",
+      "value": "1"
+    },
+    {
+      "key": "operationId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Validation Service (:8082)",
+      "item": [
+        {
+          "name": "Validar justificación válida -> valid=true",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8082/validate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8082",
+              "path": [
+                "validate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"¿Qué patrón GoF separa la construcción de un objeto complejo de su representación?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Singleton\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Builder\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Adapter\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Observer\"\n    }\n  ],\n  \"correctOptionId\": \"B\",\n  \"justification\": \"El patrón Builder construye el objeto paso a paso y valida antes de instanciarlo.\",\n  \"authorId\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('valid=true', () => pm.expect(pm.response.json().valid).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validar justificación corta -> valid=false",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8082/validate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8082",
+              "path": [
+                "validate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"¿Qué patrón GoF separa la construcción de un objeto complejo de su representación?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Singleton\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Builder\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Adapter\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Observer\"\n    }\n  ],\n  \"correctOptionId\": \"B\",\n  \"justification\": \"Muy corta\",\n  \"authorId\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('valid=false', () => pm.expect(pm.response.json().valid).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Punto 2.1 - REST síncrono Question -> Validation",
+      "item": [
+        {
+          "name": "Crear pregunta válida -> 201 DRAFT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"¿Qué patrón GoF separa la construcción de un objeto complejo de su representación?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Singleton\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Builder\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Adapter\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Observer\"\n    }\n  ],\n  \"correctOptionId\": \"B\",\n  \"justification\": \"El patrón Builder construye el objeto paso a paso y valida antes de instanciarlo.\",\n  \"authorId\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('Estado DRAFT', () => pm.expect(b.status).to.eql('DRAFT'));",
+                  "pm.test('Header Location', () => pm.response.to.have.header('Location'));",
+                  "pm.collectionVariables.set('questionId', b.questionId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Justificación <= 15 caracteres -> 400 (no se guarda)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"¿Qué patrón GoF separa la construcción de un objeto complejo de su representación?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Singleton\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Builder\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Adapter\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Observer\"\n    }\n  ],\n  \"correctOptionId\": \"B\",\n  \"justification\": \"Muy corta\",\n  \"authorId\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Solo 3 opciones -> 400 (Builder)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"¿Qué patrón GoF separa la construcción de un objeto complejo de su representación?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Singleton\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Builder\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Adapter\"\n    }\n  ],\n  \"correctOptionId\": \"B\",\n  \"justification\": \"El patrón Builder construye el objeto paso a paso y valida antes de instanciarlo.\",\n  \"authorId\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Respuesta correcta inexistente -> 400 (Builder)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"¿Qué patrón GoF separa la construcción de un objeto complejo de su representación?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Singleton\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Builder\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Adapter\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Observer\"\n    }\n  ],\n  \"correctOptionId\": \"E\",\n  \"justification\": \"El patrón Builder construye el objeto paso a paso y valida antes de instanciarlo.\",\n  \"authorId\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar preguntas (solo la válida quedó en H2)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Una sola pregunta', () => pm.expect(pm.response.json().length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar pregunta por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions/{{questionId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions",
+                "{{questionId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Punto 2.2 - AMQP asíncrono con RabbitMQ",
+      "item": [
+        {
+          "name": "Enviar a revisión -> 202 Accepted + operationId",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions/{{questionId}}/submit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions",
+                "{{questionId}}",
+                "submit"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                  "const b = pm.response.json();",
+                  "pm.test('Trae operationId', () => pm.expect(b.operationId).to.be.a('string').and.not.empty);",
+                  "pm.collectionVariables.set('operationId', b.operationId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado de la operación -> COMPLETED",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/lifecycle/operations/{{operationId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8084",
+              "path": [
+                "lifecycle",
+                "operations",
+                "{{operationId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 1500); // tiempo para que lifecycle-service consuma el mensaje"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('COMPLETED', () => pm.expect(pm.response.json().status).to.eql('COMPLETED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estado de la pregunta -> PENDING_REVIEW",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/lifecycle/{{questionId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8084",
+              "path": [
+                "lifecycle",
+                "{{questionId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('PENDING_REVIEW', () => pm.expect(pm.response.json().state).to.eql('PENDING_REVIEW'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reenviar la misma pregunta -> 202",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions/{{questionId}}/submit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions",
+                "{{questionId}}",
+                "submit"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                  "pm.collectionVariables.set('operationId', pm.response.json().operationId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado del reenvío -> FAILED (State lo impide)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/lifecycle/operations/{{operationId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8084",
+              "path": [
+                "lifecycle",
+                "operations",
+                "{{operationId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 1500); // tiempo para que lifecycle-service consuma el mensaje"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('FAILED', () => pm.expect(pm.response.json().status).to.eql('FAILED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enviar pregunta inexistente -> 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/questions/9999/submit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8083",
+              "path": [
+                "questions",
+                "9999",
+                "submit"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
