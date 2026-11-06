@@ -7,11 +7,8 @@
 - **Asignatura:** Laboratorio de Ingeniería de Software II  
 - **Docente:** Ing. Paola Andrea Bedoya Toro  
 - **Periodo Académico:** 2026.2  
-- **Autores / Equipo:**  
-  - Yeferson Santiago Caicedo Orozco  
-  - Iván Alexander López Lasso  
+- **Autores**  
   - Adrián Camilo Araujo Urbano  
-  - Carlos Arturo Bambague  
 
 ---
 
